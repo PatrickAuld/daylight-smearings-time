@@ -1,0 +1,18 @@
+---
+// The Institute's emblem: a clock face whose minute hand smears
+// into a motion-blurred dawn-orange trail.
+interface Props {
+  size?: number;
+  /** Colour of the dial, main hand, and hub (the trail is always dawn-orange). */
+  primary?: string;
+}
+const { size = 40, primary = '#1E2A38' } = Astro.props;
+---
+<svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+  <circle cx="20" cy="20" r="18.5" stroke={primary} stroke-width="2" />
+  <path d="M20 20 L20 9" stroke={primary} stroke-width="2.4" stroke-linecap="round" />
+  <path d="M20 20 L28.5 24.5" stroke="#E0662A" stroke-width="2.4" stroke-linecap="round" />
+  <path d="M20 20 L27.2 26.2" stroke="#E0662A" stroke-width="2" stroke-linecap="round" opacity=".45" />
+  <path d="M20 20 L25.4 27.4" stroke="#E0662A" stroke-width="1.8" stroke-linecap="round" opacity=".22" />
+  <circle cx="20" cy="20" r="2" fill={primary} />
+</svg>
