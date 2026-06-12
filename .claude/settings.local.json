@@ -1,7 +1,30 @@
 {
   "permissions": {
     "allow": [
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm --version)",
+      "Bash(npm install *)",
+      "Bash(npx astro *)",
+      "Bash(npm run *)",
+      "Bash(lsof -nP -iTCP:4321 -sTCP:LISTEN)",
+      "Bash(ps -p 80940 -o pid,command)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(git branch *)",
+      "mcp__visualize__show_widget",
+      "Bash(curl -s http://localhost:4329/)",
+      "Bash(curl -s http://localhost:4329/clock)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" http://localhost:4329/favicon.svg)",
+      "Bash(npm outdated *)",
+      "Bash(npm audit *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(node -e \"const p=require\\('./node_modules/vite/package.json'\\); console.log\\('vite', p.version, '-> esbuild', p.dependencies.esbuild\\)\")",
+      "Bash(git fetch *)"
     ]
   }
 }
