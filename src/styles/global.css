@@ -1,0 +1,36 @@
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL DESIGN TOKENS + RESET
+   Shared by every page. Page-specific body theming lives in each
+   page's own <style is:global> block.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --paper:#F6F0E2;
+  --paper-deep:#EFE6D0;
+  --ink:#1E2A38;
+  --ink-soft:#46566A;
+  --navy:#101D2C;
+  --navy-deep:#0A141F;
+  --navy-edge:#1C3147;
+  --dawn:#E0662A;
+  --dawn-bright:#F08A3C;
+  --gold:#C99A3F;
+  --jump-red:#B5472F;
+  --hairline:rgba(30,42,56,.22);
+  --hairline-strong:rgba(30,42,56,.45);
+  --dim:rgba(246,240,226,.45);
+  --dimmer:rgba(246,240,226,.3);
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Public Sans",sans-serif;
+  --mono:"IBM Plex Mono",monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+::selection{background:var(--dawn);color:var(--paper)}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
