@@ -12,6 +12,9 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5"
+    "astro": "^6.4.6"
+  },
+  "overrides": {
+    "esbuild": "0.28.1"
   }
 }
