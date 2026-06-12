@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daylight Smearings Time — Spring forward. Slowly.</title>
+<meta name="description" content="Daylight Smearings Time distributes the annual one-hour clock change across fourteen days — 10.71 seconds per hour — so that no one, anywhere, ever experiences 2:00 a.m. twice. Or not at all.">
+
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  EMAIL SIGNUP — GOOGLE FORM WIRING
+  ═══════════════════════════════════════════════════════════════════
+  The pledge form submits to a Google Form. To connect yours:
+
+  1. Create a Google Form with one short-answer question ("Email").
+  2. Click Send → the link icon → open the form, then View Source
+     (or use the "Get pre-filled link" trick) to find:
+       - the form action URL:  https://docs.google.com/forms/d/e/<FORM_ID>/formResponse
+       - the field name:       entry.<NUMBERS>
+  3. Replace the two constants in the CONFIG script block near the
+     bottom of this file (GOOGLE_FORM_ACTION and GOOGLE_FORM_EMAIL_FIELD).
+
+  Until configured, the form still shows the success state locally so
+  the site can be demoed.
+  ═══════════════════════════════════════════════════════════════════
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Public+Sans:ital,wght@0,300..800;1,300..800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#F6F0E2;
+  --paper-deep:#EFE6D0;
+  --ink:#1E2A38;
+  --ink-soft:#46566A;
+  --navy:#101D2C;
+  --navy-edge:#1C3147;
+  --dawn:#E0662A;
+  --dawn-bright:#F08A3C;
+  --gold:#C99A3F;
+  --jump-red:#B5472F;
+  --hairline:rgba(30,42,56,.22);
+  --hairline-strong:rgba(30,42,56,.45);
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Public Sans",sans-serif;
+  --mono:"IBM Plex Mono",monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  /* faint paper grain */
+  background-image:
+    radial-gradient(ellipse 80% 60% at 70% -10%, rgba(224,102,42,.07), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection{background:var(--dawn);color:var(--paper)}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+/* ── masthead ─────────────────────────────── */
+.bureau-bar{
+  background:var(--navy);
+  color:rgba(246,240,226,.75);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  padding:7px 0;
+}
+.bureau-bar .wrap{display:flex;justify-content:space-between;gap:16px}
+.bureau-bar span:last-child{color:var(--gold)}
+
+header.site{
+  border-bottom:1px solid var(--hairline-strong);
+  position:sticky;top:0;z-index:50;
+  background:rgba(246,240,226,.92);
+  backdrop-filter:blur(8px);
+}
+header.site .wrap{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:14px;padding-bottom:14px;
+}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+.brand svg{display:block}
+.brand-name{font-family:var(--serif);font-weight:600;font-size:17.5px;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+.brand-name small{display:block;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px}
+nav.main{display:flex;align-items:center;gap:18px}
+nav.main a{
+  text-decoration:none;color:var(--ink-soft);
+  font-size:13px;font-weight:500;letter-spacing:.02em;
+  white-space:nowrap;
+}
+nav.main a:hover{color:var(--dawn)}
+nav.main a.cta{
+  color:var(--paper);background:var(--ink);
+  padding:9px 18px;border-radius:2px;
+  font-weight:600;
+  transition:background .2s;
+}
+nav.main a.cta:hover{background:var(--dawn);color:var(--paper)}
+@media(max-width:1180px){.nav-clock small{display:none}nav.main{gap:14px}}
+@media(max-width:1080px){nav.main a[href="#precedent"],nav.main a[href="#voices"]{display:none}}
+@media(max-width:980px){nav.main a:not(.cta):not(.nav-clock){display:none}}
+
+/* compact live clock in the masthead */
+.nav-clock{
+  display:flex!important;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:13px!important;letter-spacing:.06em;
+  font-variant-numeric:tabular-nums;
+  color:var(--gold)!important;
+  background:var(--navy);
+  border:1px solid var(--navy-edge);
+  padding:8px 14px;border-radius:3px;
+  transition:border-color .2s;
+}
+.nav-clock:hover{border-color:var(--dawn);color:var(--gold)}
+.nav-clock .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--dawn-bright);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+.nav-clock small{
+  font-size:8.5px;letter-spacing:.18em;font-weight:400;
+  color:rgba(246,240,226,.5);
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── hero ─────────────────────────────────── */
+.hero{padding:96px 0 88px;overflow:hidden}
+.hero .wrap{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  max-width:860px;
+}
+.hero .kicker{justify-content:center}
+.hero .kicker::after{content:"";width:34px;height:1px;background:var(--dawn)}
+.hero p.lede{margin-left:auto;margin-right:auto}
+.hero-ctas{justify-content:center}
+.hero-foot{justify-content:center}
+
+.kicker{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--dawn);
+  display:flex;align-items:center;gap:12px;margin-bottom:26px;
+}
+.kicker::before{content:"";width:34px;height:1px;background:var(--dawn)}
+
+h1{
+  font-family:var(--serif);
+  font-size:clamp(44px,6vw,72px);
+  font-weight:560;
+  line-height:1.02;
+  letter-spacing:-.025em;
+}
+h1 .smeared{
+  position:relative;display:inline-block;
+  color:var(--dawn);
+  font-style:italic;font-weight:480;
+}
+/* motion-blur trail on the word "Slowly" */
+h1 .smeared::before{
+  content:attr(data-word);
+  position:absolute;left:0;top:0;
+  color:var(--dawn);opacity:.28;filter:blur(3px);
+  transform:translateX(-7px);
+  pointer-events:none;
+}
+h1 .smeared::after{
+  content:attr(data-word);
+  position:absolute;left:0;top:0;
+  color:var(--dawn);opacity:.12;filter:blur(7px);
+  transform:translateX(-16px);
+  pointer-events:none;
+}
+
+.hero p.lede{
+  margin-top:26px;font-size:18.5px;line-height:1.7;color:var(--ink-soft);
+  max-width:54ch;
+}
+.hero p.lede strong{color:var(--ink);font-weight:600}
+
+.hero-ctas{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap}
+.btn{
+  display:inline-block;text-decoration:none;
+  font-family:var(--sans);font-weight:600;font-size:14.5px;letter-spacing:.02em;
+  padding:14px 26px;border-radius:2px;
+  transition:transform .15s,background .2s,color .2s;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--dawn);color:#fff}
+.btn-primary:hover{background:var(--ink)}
+.btn-ghost{color:var(--ink);border:1px solid var(--hairline-strong)}
+.btn-ghost:hover{border-color:var(--dawn);color:var(--dawn)}
+
+.hero-foot{
+  margin-top:34px;font-family:var(--mono);font-size:12px;color:var(--ink-soft);
+  display:flex;align-items:center;gap:10px;
+}
+.hero-foot .pips{display:flex}
+.hero-foot .pips span{
+  width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--paper);
+  background:linear-gradient(135deg,var(--gold),var(--dawn));
+  margin-left:-8px;
+}
+.hero-foot .pips span:first-child{margin-left:0}
+.hero-foot .pips span:nth-child(2){background:linear-gradient(135deg,var(--navy-edge),var(--ink-soft))}
+.hero-foot .pips span:nth-child(3){background:linear-gradient(135deg,var(--dawn),var(--jump-red))}
+
+/* staggered reveal */
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.hero .kicker,.hero h1,.hero .lede,.hero-ctas,.hero-foot{
+  animation:rise .7s cubic-bezier(.2,.7,.2,1) both;
+}
+.hero h1{animation-delay:.08s}
+.hero .lede{animation-delay:.16s}
+.hero-ctas{animation-delay:.24s}
+.hero-foot{animation-delay:.32s}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* ── sections ─────────────────────────────── */
+section{padding:88px 0;border-top:1px solid var(--hairline)}
+.sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:18px}
+.sec-num{
+  font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dawn);
+  white-space:nowrap;
+}
+h2{
+  font-family:var(--serif);font-weight:560;letter-spacing:-.02em;
+  font-size:clamp(30px,3.6vw,42px);line-height:1.1;
+}
+.sec-intro{max-width:62ch;color:var(--ink-soft);font-size:17.5px;margin-bottom:48px}
+.sec-intro strong{color:var(--ink)}
+sup{font-size:.62em;color:var(--dawn)}
+
+/* problem stats */
+.stat-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--hairline);border:1px solid var(--hairline);
+}
+@media(max-width:820px){.stat-row{grid-template-columns:1fr}}
+.stat{background:var(--paper);padding:34px 30px}
+.stat .big{
+  font-family:var(--serif);font-size:56px;font-weight:560;letter-spacing:-.03em;
+  color:var(--jump-red);line-height:1;
+}
+.stat .big.good{color:var(--dawn)}
+.stat h3{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:16px 0 8px}
+.stat p{font-size:14.5px;color:var(--ink-soft);line-height:1.6}
+
+/* solution */
+.solution{background:var(--paper-deep)}
+.sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+@media(max-width:960px){.sol-grid{grid-template-columns:1fr}}
+.chart-card{
+  background:var(--paper);border:1px solid var(--hairline-strong);
+  border-radius:4px;padding:26px;
+  box-shadow:0 16px 40px -28px rgba(30,42,56,.5);
+}
+.chart-card figcaption{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-soft);margin-top:14px;display:flex;gap:22px;flex-wrap:wrap;
+}
+.chart-card .key{display:flex;align-items:center;gap:8px}
+.chart-card .key i{width:18px;height:0;border-top:3px solid;display:block}
+.chart-card .key.jump i{border-color:var(--jump-red);border-top-style:dashed}
+.chart-card .key.smear i{border-color:var(--dawn)}
+
+.steps{counter-reset:step;list-style:none;margin-top:6px}
+.steps li{
+  counter-increment:step;position:relative;
+  padding:0 0 30px 64px;
+}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);
+  position:absolute;left:0;top:2px;
+  font-family:var(--mono);font-size:13px;color:var(--dawn);
+  border:1px solid var(--hairline-strong);border-radius:50%;
+  width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  background:var(--paper);
+}
+.steps li:not(:last-child)::after{
+  content:"";position:absolute;left:21px;top:50px;bottom:6px;width:1px;
+  background:var(--hairline);
+}
+.steps h3{font-family:var(--serif);font-size:21px;font-weight:600;margin-bottom:6px}
+.steps p{font-size:15.5px;color:var(--ink-soft)}
+.steps p b{color:var(--ink)}
+
+/* precedent / digital */
+.precedent .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}
+@media(max-width:960px){.precedent .wrap{grid-template-columns:1fr}}
+.precedent blockquote{
+  font-family:var(--serif);font-size:clamp(22px,2.6vw,30px);font-weight:480;
+  font-style:italic;line-height:1.35;letter-spacing:-.01em;
+  border-left:3px solid var(--dawn);padding-left:26px;
+}
+.precedent blockquote footer{
+  font-family:var(--mono);font-style:normal;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-soft);margin-top:18px;
+}
+.fact-list{list-style:none;display:grid;gap:14px}
+.fact-list li{
+  display:flex;gap:16px;align-items:flex-start;
+  background:var(--paper);border:1px solid var(--hairline);
+  padding:18px 22px;border-radius:3px;font-size:15.5px;color:var(--ink-soft);
+}
+.fact-list li b{color:var(--ink)}
+.fact-list .tick{
+  flex:none;width:22px;height:22px;border-radius:50%;margin-top:2px;
+  background:var(--dawn);color:#fff;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* voices */
+.voices{background:var(--navy);color:var(--paper);border-top:none}
+.voices .sec-num{color:var(--gold)}
+.voices h2{color:#FBF6EA}
+.voices .sec-intro{color:rgba(246,240,226,.6)}
+.voice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+@media(max-width:820px){.voice-grid{grid-template-columns:1fr}}
+.voice{
+  background:rgba(246,240,226,.045);
+  border:1px solid rgba(246,240,226,.12);
+  border-radius:4px;padding:30px 30px 24px;
+  position:relative;
+}
+.voice::before{
+  content:"“";font-family:var(--serif);font-size:64px;line-height:0;
+  color:var(--dawn-bright);position:absolute;top:38px;left:26px;opacity:.9;
+}
+.voice p{
+  font-family:var(--serif);font-size:18.5px;line-height:1.5;font-weight:400;
+  padding-left:34px;color:#F2EBDB;
+}
+.voice footer{
+  margin-top:20px;padding-left:34px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(246,240,226,.55);line-height:1.8;
+}
+.voice footer b{color:var(--gold);font-weight:500;display:block}
+
+/* faq */
+.faq-list{max-width:760px}
+.faq-list details{border-bottom:1px solid var(--hairline)}
+.faq-list summary{
+  cursor:pointer;list-style:none;
+  font-family:var(--serif);font-size:20px;font-weight:560;
+  padding:24px 44px 24px 0;position:relative;
+}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{
+  content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:22px;font-weight:300;color:var(--dawn);
+  transition:transform .25s;
+}
+.faq-list details[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+.faq-list details p{padding:0 0 26px;color:var(--ink-soft);max-width:62ch}
+
+/* join */
+.join{
+  background:
+    radial-gradient(ellipse 70% 90% at 50% 115%, rgba(240,138,60,.28), transparent 65%),
+    var(--navy);
+  color:var(--paper);text-align:center;border-top:none;
+  padding:110px 0;
+}
+.join .kicker{justify-content:center}
+.join .kicker::before{display:none}
+.join h2{color:#FBF6EA;font-size:clamp(34px,4.4vw,54px);max-width:18ch;margin:0 auto}
+.join .sub{color:rgba(246,240,226,.65);max-width:52ch;margin:22px auto 0;font-size:17px}
+.pledge-count{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);margin-top:34px;
+}
+.pledge-count b{font-size:15px}
+form.pledge{
+  margin:22px auto 0;max-width:520px;display:flex;gap:10px;
+}
+@media(max-width:560px){form.pledge{flex-direction:column}}
+form.pledge input[type=email]{
+  flex:1;padding:16px 20px;border-radius:2px;
+  border:1px solid rgba(246,240,226,.25);
+  background:rgba(246,240,226,.07);color:#FBF6EA;
+  font-family:var(--mono);font-size:14px;
+  outline:none;transition:border-color .2s;
+}
+form.pledge input[type=email]::placeholder{color:rgba(246,240,226,.4)}
+form.pledge input[type=email]:focus{border-color:var(--dawn-bright)}
+form.pledge button{
+  padding:16px 30px;border:none;border-radius:2px;cursor:pointer;
+  background:var(--dawn);color:#fff;
+  font-family:var(--sans);font-weight:700;font-size:14.5px;letter-spacing:.03em;
+  transition:background .2s,transform .15s;
+}
+form.pledge button:hover{background:var(--dawn-bright)}
+form.pledge button:active{transform:translateY(1px)}
+.form-note{
+  font-family:var(--mono);font-size:11px;color:rgba(246,240,226,.4);
+  margin-top:16px;letter-spacing:.06em;
+}
+.form-success{
+  display:none;margin:30px auto 0;max-width:520px;
+  border:1px solid var(--gold);border-radius:3px;padding:20px 24px;
+  font-family:var(--mono);font-size:13px;color:var(--gold);line-height:1.7;
+}
+
+/* footer */
+footer.site{
+  background:#0B1622;color:rgba(246,240,226,.55);
+  padding:54px 0 40px;font-size:13px;
+}
+footer.site .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:48px}
+@media(max-width:820px){footer.site .wrap{grid-template-columns:1fr}}
+footer.site h4{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:14px;
+}
+footer.site ol{padding-left:18px;display:grid;gap:8px;font-size:12.5px;line-height:1.6}
+footer.site .fine{margin-top:26px;font-size:12px;line-height:1.8;color:rgba(246,240,226,.4)}
+footer.site .legal{
+  border-top:1px solid rgba(246,240,226,.1);margin-top:40px;padding-top:22px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  color:rgba(246,240,226,.35);
+}
+</style>
+</head>
+<body>
+
+<div class="bureau-bar">
+  <div class="wrap">
+    <span>The Institute for Temporal Continuity · Est. 2019</span>
+    <span>Bulletin No. 14 — Public Comment Period Open</span>
+  </div>
+</div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <!-- clock mark with smeared hand -->
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="20" cy="20" r="18.5" stroke="#1E2A38" stroke-width="2"/>
+        <path d="M20 20 L20 9" stroke="#1E2A38" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M20 20 L28.5 24.5" stroke="#E0662A" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M20 20 L27.2 26.2" stroke="#E0662A" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+        <path d="M20 20 L25.4 27.4" stroke="#E0662A" stroke-width="1.8" stroke-linecap="round" opacity=".22"/>
+        <circle cx="20" cy="20" r="2" fill="#1E2A38"/>
+      </svg>
+      <span class="brand-name">Daylight Smearings Time<small>A continuous-clock initiative</small></span>
+    </a>
+    <nav class="main">
+      <a href="#problem">The Problem</a>
+      <a href="#solution">How It Works</a>
+      <a href="#precedent">Precedent</a>
+      <a href="#voices">Voices</a>
+      <a href="#faq">FAQ</a>
+      <a class="nav-clock" href="clock.html" title="Official Smeared Time — open the full clock">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="nav-clock">--:--:--</span>
+        <small>SMEARED</small>
+      </a>
+      <a href="#join" class="cta">Join the Cause</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ════════ HERO ════════ -->
+<section class="hero" style="border-top:none">
+  <div class="wrap">
+    <p class="kicker">A Civic Proposal · Temporal Policy Reform</p>
+    <h1>Spring forward.<br><span class="smeared" data-word="Slowly.">Slowly.</span></h1>
+    <p class="lede">Daylight Smearings Time distributes the annual one-hour clock change
+      across fourteen days — <strong>2.98 milliseconds per second</strong> — so that no one,
+      anywhere, ever experiences 2:00&nbsp;a.m. twice. Or not at all.
+      The hour still arrives. It arrives the way dawn does: gradually.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#join">Join the movement</a>
+      <a class="btn btn-ghost" href="clock.html">View the official clock</a>
+    </div>
+    <div class="hero-foot">
+      <div class="pips"><span></span><span></span><span></span></div>
+      <span id="pledge-inline">11,432 citizens have pledged</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PROBLEM ════════ -->
+<section id="problem">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">§ 01</span><h2>The clock should never startle you.</h2></div>
+    <p class="sec-intro">Twice a year, by statute, hundreds of millions of people are subjected
+      to a one-hour temporal discontinuity — administered without anesthetic, at 2:00&nbsp;a.m.,
+      on a weekend. The clinical literature on what follows is consistent, peer-reviewed,
+      and largely ignored.</p>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="big">+24%</div>
+        <h3>Heart attacks</h3>
+        <p>Increase in acute myocardial infarction admissions the Monday after the spring
+           transition.<sup>1</sup> The heart, it turns out, was not consulted.</p>
+      </div>
+      <div class="stat">
+        <div class="big">+6%</div>
+        <h3>Fatal traffic accidents</h3>
+        <p>Rise in fatal crashes during the week following the spring change.<sup>2</sup>
+           An hour of sleep, removed by legislation, is still an hour of sleep.</p>
+      </div>
+      <div class="stat">
+        <div class="big good">4m 17s</div>
+        <h3>The alternative</h3>
+        <p>Maximum daily adjustment under Daylight Smearings Time. Roughly the time it
+           takes to steep a cup of tea. The body does not file a complaint.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ SOLUTION ════════ -->
+<section id="solution" class="solution">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">§ 02</span><h2>One hour. Fourteen days. Zero events.</h2></div>
+    <p class="sec-intro">Daylight Smearings Time keeps daylight saving time. We are not
+      abolitionists. We object only to its <strong>delivery mechanism</strong>. The hour is not
+      removed; it is administered in 1,209,600 doses of 2.98 milliseconds each — one per
+      second, around the clock, below the threshold of human perception.
+      <strong id="smear-dates"></strong></p>
+
+    <div class="sol-grid">
+      <figure class="chart-card">
+        <svg viewBox="0 0 460 280" width="100%" role="img" aria-label="Chart comparing the abrupt one-hour clock jump of the status quo with the gradual fourteen-day ramp of Daylight Smearings Time, for the next upcoming transition">
+          <!-- grid -->
+          <g stroke="rgba(30,42,56,.12)" stroke-width="1">
+            <line x1="50" y1="40"  x2="430" y2="40"/>
+            <line x1="50" y1="100" x2="430" y2="100"/>
+            <line x1="50" y1="160" x2="430" y2="160"/>
+            <line x1="50" y1="220" x2="430" y2="220"/>
+          </g>
+          <!-- axes -->
+          <line x1="50" y1="30" x2="50" y2="220" stroke="rgba(30,42,56,.45)" stroke-width="1.2"/>
+          <line x1="50" y1="220" x2="430" y2="220" stroke="rgba(30,42,56,.45)" stroke-width="1.2"/>
+          <!-- y labels (set by JS for the next transition's direction) -->
+          <g font-family="IBM Plex Mono,monospace" font-size="10" fill="#46566A">
+            <text id="ay0" x="42" y="224" text-anchor="end">0m</text>
+            <text id="ay1" x="42" y="164" text-anchor="end">20m</text>
+            <text id="ay2" x="42" y="104" text-anchor="end">40m</text>
+            <text id="ay3" x="42" y="44"  text-anchor="end">60m</text>
+            <text id="ax0" x="50"  y="240">—</text>
+            <text id="ax1" x="240" y="240" text-anchor="middle">—</text>
+            <text id="ax2" x="430" y="240" text-anchor="end">—</text>
+            <text x="240" y="264" text-anchor="middle" letter-spacing="2">CLOCK ADJUSTMENT APPLIED</text>
+          </g>
+          <!-- status quo: step function -->
+          <path id="jump-path" d="M50 220 H240 V40 H430" fill="none" stroke="#B5472F" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <!-- the violent moment -->
+          <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#B5472F">
+            <text x="248" y="128" letter-spacing="1">THE JUMP</text>
+            <text x="248" y="141" letter-spacing="1">(2:00 AM, UNANNOUNCED</text>
+            <text x="248" y="154" letter-spacing="1">TO THE SLEEPING)</text>
+          </g>
+          <!-- smear: linear ramp completing exactly at the legacy transition -->
+          <path id="smear-path" d="M50 220 L240 40 H430" fill="none" stroke="#E0662A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#E0662A">
+            <text x="108" y="198" letter-spacing="1">THE SMEAR</text>
+            <text x="108" y="211" letter-spacing="1">(IMPERCEPTIBLE)</text>
+          </g>
+        </svg>
+        <figcaption>
+          <span class="key jump"><i></i>Status quo</span>
+          <span class="key smear"><i></i>Daylight Smearings Time</span>
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>
+          <h3>The smear begins quietly</h3>
+          <p>Fourteen days before the legacy transition date, clocks begin to drift toward
+             the new hour at <b>2.98 milliseconds per second</b> — a rate the human nervous
+             system cannot register, administered while you are doing something else.</p>
+        </li>
+        <li>
+          <h3>Each day absorbs its share</h3>
+          <p>Every day carries <b>4 minutes and 17 seconds</b> of the change. Sunrise,
+             meetings, and milking schedules glide. Nothing is skipped. Nothing is repeated.</p>
+        </li>
+        <li>
+          <h3>The old clocks leap. Ours are already there.</h3>
+          <p>At 2:00&nbsp;a.m. on the legacy transition date, the smear completes — at the
+             exact moment unsmeared clocks lurch a full hour to catch up. We will be asleep,
+             <b>continuously</b>.</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PRECEDENT ════════ -->
+<section id="precedent" class="precedent">
+  <div class="wrap">
+    <blockquote>
+      “When a leap second was added on December 31, 2016, the world's largest computing
+      infrastructure did not stop its clocks for one second. It stretched the surrounding
+      twenty hours by 0.0014% instead. Nothing crashed. Nobody noticed. <em>That was the
+      point.</em>”
+      <footer>— Public engineering documentation, leap smear, 2016</footer>
+    </blockquote>
+    <div>
+      <div class="sec-head"><span class="sec-num">§ 03</span><h2>Your devices already live this way.</h2></div>
+      <p class="sec-intro">Smearing is not speculative. It is the established industry practice
+        for absorbing time discontinuities — we merely propose extending it to the largest
+        discontinuity of all.</p>
+      <ul class="fact-list">
+        <li><span class="tick">✓</span><span><b>Leap seconds have been smeared since 2008.</b>
+          Major cloud providers stretch each leap second across the surrounding hours on
+          millions of servers, in production, twice a decade, without incident.</span></li>
+        <li><span class="tick">✓</span><span><b>Your phone already adjusts itself constantly.</b>
+          Consumer devices synchronize to network time many times a day, absorbing small
+          corrections you have never once perceived. We propose one more.</span></li>
+        <li><span class="tick">✓</span><span><b>One published table, total compatibility.</b>
+          The smear schedule is a deterministic function — publishable as a standard timezone
+          entry. Calendars, trains, and exchanges follow it the way they follow everything
+          else: automatically.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ VOICES ════════ -->
+<section id="voices" class="voices">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">§ 04</span><h2>Voices of the continuously rested.</h2></div>
+    <p class="sec-intro">Households, farms, and server fleets in our voluntary pilot program
+      have lived on smeared time through four consecutive transitions. Their testimony is
+      reproduced unedited.</p>
+
+    <div class="voice-grid">
+      <article class="voice">
+        <p>For the first time in nineteen years of fieldwork, my study participants did not
+           notice March. I had to tell them it had occurred.</p>
+        <footer><b>Dr. Ingrid Halvorsen</b>Circadian researcher · Pilot cohort 2, year 1</footer>
+      </article>
+      <article class="voice">
+        <p>We have been smearing leap seconds in production since 2011. Smearing an hour is
+           not a technical problem. It is a courage problem.</p>
+        <footer><b>Gene Tran</b>Site reliability engineer · 14,000 hosts on smeared time</footer>
+      </article>
+      <article class="voice">
+        <p>The cows never agreed to daylight saving. Under smearing, milking moves four
+           minutes a day. The herd has registered no objection, and I have learned to read
+           them carefully.</p>
+        <footer><b>Marlene Okafor</b>Dairy farmer · 240 head · Pilot cohort 1</footer>
+      </article>
+      <article class="voice">
+        <p>The Monday after the spring change used to be our worst attendance day of the
+           year. Now there is no Monday after. There is only a gentle two weeks.</p>
+        <footer><b>R. Whitfield</b>Middle school principal · 612 students</footer>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FAQ ════════ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">§ 05</span><h2>Anticipated objections.</h2></div>
+    <div class="faq-list">
+      <details>
+        <summary>Is this the same as abolishing daylight saving time?</summary>
+        <p>No. We are not abolitionists. We support daylight saving time and the evening
+           light it provides. We object only to its abruptness. The hour may move; it may
+           not lunge.</p>
+      </details>
+      <details>
+        <summary>What happens at 2:00 a.m. on the second Sunday of March?</summary>
+        <p>2:01 a.m., like any other day.</p>
+      </details>
+      <details>
+        <summary>Will my meetings still start on time?</summary>
+        <p>Your meetings will start at the smeared time, which is the time. Your calendar
+           already receives its time from a network source that we would simply inform of
+           the schedule. You will continue to be three minutes late for reasons of your own.</p>
+      </details>
+      <details>
+        <summary>Isn't fourteen days arbitrary?</summary>
+        <p>No. The fourteen-day schedule was adopted by the Institute's Committee on
+           Re-entrainment Standards following a meta-analysis of 41 published phase-shift
+           studies. The governing criterion — Technical Memorandum No.&nbsp;7, §4.2,
+           <i>Maximum Imperceptible Drift</i> — caps daily adjustment at one half of the
+           natural day-to-day variability of the human circadian period (±8.6 minutes).
+           At 4 minutes 17 seconds per day, the fourteen-day smear operates at a 2.0×
+           margin below the perceptibility threshold, while aligning the administration
+           window with one full semilunar cycle, the interval to which intertidal
+           organisms have entrained for roughly 400 million years. Shorter schedules
+           failed the perceptibility criterion. Longer schedules were deemed indulgent.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ JOIN ════════ -->
+<section id="join" class="join">
+  <div class="wrap">
+    <p class="kicker">Public Comment Period · Bulletin No. 14</p>
+    <h2>The hour is coming. Let it come gently.</h2>
+    <p class="sub">Add your name to the petition for a fourteen-day smear standard.
+       We will write to you only when the cause requires it, which is less often than
+       you would think.</p>
+
+    <p class="pledge-count"><b id="pledge-count">11,432</b> citizens on the rolls</p>
+
+    <!-- Submits to a Google Form. See CONFIG block below to wire up your form. -->
+    <form class="pledge" id="pledge-form" method="POST" target="gform-sink" novalidate>
+      <input type="email" id="pledge-email" name="" placeholder="your@email.example" required autocomplete="email" aria-label="Email address">
+      <button type="submit">Sign the petition</button>
+    </form>
+    <iframe name="gform-sink" id="gform-sink" style="display:none" title="hidden form target"></iframe>
+
+    <div class="form-success" id="form-success">
+      ✓ &nbsp;Recorded. Your signature has been entered into the rolls with a timestamp
+      that will remain meaningful under either system. Welcome to the gentle two weeks.
+    </div>
+
+    <p class="form-note">No spam. No sharp transitions. Unsubscribing takes effect gradually over fourteen days.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ════════ FOOTER ════════ -->
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <h4>The Institute for Temporal Continuity</h4>
+      <p class="fine">A civic organization advocating the orderly, continuous, and humane
+         administration of civil time. The Institute does not observe the legacy transition
+         in its offices; staff simply arrive when appropriate.</p>
+      <p class="fine">Daylight Smearings Time is not currently recognized by the International
+         Bureau of Weights and Measures, the United States Department of Transportation, or
+         any national metrology institute. We believe this is temporary.</p>
+    </div>
+    <div>
+      <h4>Citations</h4>
+      <ol>
+        <li>Sandhu A, Seth M, Gurm HS. “Daylight savings time and myocardial infarction.” <i>Open Heart</i>, 2014.</li>
+        <li>Fritz J, et al. “A chronobiological evaluation of the acute effects of daylight saving time on traffic accident risk.” <i>Current Biology</i>, 2020.</li>
+        <li>Leap smear: public engineering documentation of production leap-second smearing, 2011–present.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="legal" style="grid-column:1/-1">
+      <span>© <span id="yr">2026</span> The Institute for Temporal Continuity</span>
+      <span>This page renders correctly in both timebases.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="smear.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG — Google Form wiring (see comment block in <head>)
+   ═══════════════════════════════════════════════════════════════ */
+const GOOGLE_FORM_ACTION = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/formResponse";
+const GOOGLE_FORM_EMAIL_FIELD = "entry.0000000000";
+
+const $ = id => document.getElementById(id);
+
+/* ── masthead clock ── */
+function navTick() {
+  const { smeared } = smearedNow();
+  $("nav-clock").textContent =
+    pad(smeared.getHours()) + ":" + pad(smeared.getMinutes()) + ":" + pad(smeared.getSeconds());
+}
+navTick();
+setInterval(navTick, 250);
+
+/* ── §02: chart + copy reflect the next upcoming transition ── */
+function renderNextShift() {
+  const { st } = smearedNow();
+  const tr = st.next;
+  if (!tr) return;
+  const start = new Date(tr.at.getTime() - SMEAR);
+  const after = new Date(tr.at.getTime() + 7 * DAY);
+  const spring = tr.dir > 0;
+
+  $("ax0").textContent = fmtShort(start);
+  $("ax1").textContent = fmtShort(tr.at);
+  $("ax2").textContent = fmtShort(after);
+
+  // spring: ramp climbs 0 → 60m; fall: ramp descends 0 → −60m
+  const yLabels = spring ? ["0m", "20m", "40m", "60m"] : ["−60m", "−40m", "−20m", "0m"];
+  ["ay0", "ay1", "ay2", "ay3"].forEach((id, i) => { $(id).textContent = yLabels[i]; });
+  $("jump-path").setAttribute("d", spring ? "M50 220 H240 V40 H430" : "M50 40 H240 V220 H430");
+  $("smear-path").setAttribute("d", spring ? "M50 220 L240 40 H430" : "M50 40 L240 220 H430");
+
+  $("smear-dates").textContent =
+    "The next administration begins " + fmtDate(start) +
+    " and completes at 2:00 a.m. on " + fmtDate(tr.at) +
+    ", precisely as legacy clocks " + (spring ? "spring forward." : "fall back.");
+}
+renderNextShift();
+
+/* ── pledge form → Google Form ── */
+const form = $("pledge-form");
+const countEl = $("pledge-count");
+let pledges = 11432;
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const email = $("pledge-email");
+  if (!email.value || !email.checkValidity()) { email.focus(); return; }
+
+  if (GOOGLE_FORM_ACTION.indexOf("YOUR_FORM_ID") === -1) {
+    // Real submission via hidden iframe (Google Forms allows cross-origin POST)
+    const f = document.createElement("form");
+    f.action = GOOGLE_FORM_ACTION;
+    f.method = "POST";
+    f.target = "gform-sink";
+    f.style.display = "none";
+    const inp = document.createElement("input");
+    inp.name = GOOGLE_FORM_EMAIL_FIELD;
+    inp.value = email.value;
+    f.appendChild(inp);
+    document.body.appendChild(f);
+    f.submit();
+    f.remove();
+  }
+
+  pledges += 1;
+  countEl.textContent = pledges.toLocaleString();
+  $("pledge-inline").textContent = pledges.toLocaleString() + " citizens have pledged";
+  form.style.display = "none";
+  $("form-success").style.display = "block";
+});
+
+$("yr").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

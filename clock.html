@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Official Smeared Time — Daylight Smearings Time</title>
+<meta name="description" content="The official live display of smeared civil time, maintained by the Institute for Temporal Continuity.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Public+Sans:ital,wght@0,300..800;1,300..800&family=IBM+Plex+Mono:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#F6F0E2;
+  --ink:#1E2A38;
+  --navy:#101D2C;
+  --navy-deep:#0A141F;
+  --navy-edge:#1C3147;
+  --dawn:#E0662A;
+  --dawn-bright:#F08A3C;
+  --gold:#C99A3F;
+  --dim:rgba(246,240,226,.45);
+  --dimmer:rgba(246,240,226,.3);
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Public Sans",sans-serif;
+  --mono:"IBM Plex Mono",monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  color:var(--paper);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  background:
+    /* dawn on the horizon */
+    radial-gradient(ellipse 90% 55% at 50% 118%, rgba(240,138,60,.38), rgba(224,102,42,.12) 45%, transparent 70%),
+    /* upper-sky vignette */
+    radial-gradient(ellipse 120% 90% at 50% -30%, #16273A, transparent 60%),
+    linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 60%, #1A2435 100%);
+  background-attachment:fixed;
+}
+/* faint grain over everything */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection{background:var(--dawn);color:var(--paper)}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* ── top bar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 34px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);
+  animation:rise .7s cubic-bezier(.2,.7,.2,1) both;
+}
+.topbar a{
+  color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:12px;
+  transition:color .2s;
+}
+.topbar a:hover{color:var(--dawn-bright)}
+.topbar svg{display:block;flex:none}
+.topbar .live{color:var(--dawn-bright);display:flex;align-items:center;gap:8px;letter-spacing:.18em}
+.topbar .live::before{
+  content:"";width:7px;height:7px;border-radius:50%;background:var(--dawn-bright);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+
+/* ── center stage ── */
+main{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 24px;
+  animation:rise .9s .1s cubic-bezier(.2,.7,.2,1) both;
+}
+.plaque{
+  font-family:var(--mono);font-size:clamp(10px,1.2vw,13px);
+  letter-spacing:.5em;text-indent:.5em;text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:3vh;
+}
+.time{
+  font-family:var(--mono);font-weight:200;
+  font-size:clamp(64px,16vw,210px);
+  line-height:.95;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;
+  color:#FBF6EA;
+  display:flex;align-items:baseline;justify-content:center;
+  text-shadow:0 0 80px rgba(240,138,60,.18);
+}
+.time .colon{animation:pulse 1s steps(1) infinite}
+.time .tenths{
+  font-size:.22em;font-weight:300;color:var(--dawn-bright);margin-left:.18em;
+}
+.date{
+  font-family:var(--mono);font-size:clamp(11px,1.5vw,15px);
+  letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;
+  color:var(--dim);margin-top:3.2vh;
+}
+.status{
+  max-width:62ch;margin-top:2.2vh;
+  font-family:var(--mono);font-size:clamp(10.5px,1.2vw,12.5px);
+  line-height:1.8;letter-spacing:.04em;color:var(--dimmer);
+}
+.status b{color:var(--gold);font-weight:500}
+
+/* ── instrument panel ── */
+.panel{
+  animation:rise .9s .2s cubic-bezier(.2,.7,.2,1) both;
+  padding:0 34px 30px;
+}
+.panel-inner{
+  max-width:980px;margin:0 auto;
+  border:1px solid rgba(246,240,226,.14);
+  border-radius:5px;
+  background:rgba(10,20,31,.55);
+  backdrop-filter:blur(6px);
+  overflow:hidden;
+}
+dl.readouts{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid rgba(246,240,226,.12);
+}
+@media(max-width:760px){dl.readouts{grid-template-columns:repeat(2,1fr)}}
+.cell{
+  padding:18px 22px 15px;
+  border-right:1px solid rgba(246,240,226,.12);
+}
+.cell:last-child{border-right:none}
+@media(max-width:760px){.cell:nth-child(2){border-right:none}.cell:nth-child(-n+2){border-bottom:1px solid rgba(246,240,226,.12)}}
+.cell dt{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--dimmer);margin-bottom:7px;
+}
+.cell dd{
+  font-family:var(--mono);font-size:17px;color:#FBF6EA;font-variant-numeric:tabular-nums;
+}
+.cell dd em{font-style:normal;color:var(--gold)}
+
+.track{padding:16px 22px 18px}
+.track .lab{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--dimmer);margin-bottom:9px;
+}
+.bar{height:6px;border-radius:3px;background:rgba(246,240,226,.12);overflow:hidden}
+.bar i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--gold),var(--dawn-bright));
+  border-radius:3px;transition:width .5s;
+}
+
+.foot{
+  text-align:center;padding:0 34px 22px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(246,240,226,.25);
+  animation:rise .9s .3s cubic-bezier(.2,.7,.2,1) both;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" title="Return to the Institute">
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <circle cx="20" cy="20" r="18.5" stroke="#C99A3F" stroke-width="2"/>
+      <path d="M20 20 L20 9" stroke="#C99A3F" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M20 20 L28.5 24.5" stroke="#E0662A" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M20 20 L27.2 26.2" stroke="#E0662A" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+      <path d="M20 20 L25.4 27.4" stroke="#E0662A" stroke-width="1.8" stroke-linecap="round" opacity=".22"/>
+      <circle cx="20" cy="20" r="2" fill="#C99A3F"/>
+    </svg>
+    <span>The Institute for Temporal Continuity</span>
+  </a>
+  <span class="live">Live</span>
+</div>
+
+<main>
+  <p class="plaque">Official Smeared Time</p>
+  <div class="time" role="timer" aria-label="Current smeared time">
+    <span id="hh">--</span><span class="colon">:</span><span id="mm">--</span><span class="colon">:</span><span id="ss">--</span><span class="tenths" id="ds">.0</span>
+  </div>
+  <p class="date" id="clock-date">—</p>
+  <p class="status" id="clock-status">Initializing continuous timebase…</p>
+</main>
+
+<div class="panel">
+  <div class="panel-inner">
+    <dl class="readouts">
+      <div class="cell"><dt>Legacy civil time</dt><dd id="civil">--:--:--</dd></div>
+      <div class="cell"><dt>Divergence</dt><dd id="divergence"><em>+00:00.0</em></dd></div>
+      <div class="cell"><dt>Smear rate</dt><dd id="rate">0.00 ms/s</dd></div>
+      <div class="cell"><dt>Next smear event</dt><dd id="next-event">—</dd></div>
+    </dl>
+    <div class="track">
+      <div class="lab"><span>Smear progress</span><span id="smear-pct">0.0%</span></div>
+      <div class="bar"><i id="smear-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<p class="foot">This display is authoritative in both timebases · Bulletin No. 14</p>
+
+<script src="smear.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+function tick() {
+  const { now, st, smeared } = smearedNow();
+
+  $("hh").textContent = pad(smeared.getHours());
+  $("mm").textContent = pad(smeared.getMinutes());
+  $("ss").textContent = pad(smeared.getSeconds());
+  $("ds").textContent = "." + Math.floor(smeared.getMilliseconds() / 100);
+  $("clock-date").textContent = fmtDate(smeared);
+
+  $("civil").textContent =
+    pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+
+  const dv = st.divergenceMs;
+  const sign = dv > 0 ? "+" : dv < 0 ? "−" : "+";
+  const adv = Math.abs(dv);
+  $("divergence").innerHTML = "<em>" + sign +
+    pad(Math.floor(adv / 60000)) + ":" +
+    pad(Math.floor((adv % 60000) / 1000)) + "." +
+    Math.floor((adv % 1000) / 100) + "</em>";
+
+  $("rate").textContent = st.active ? SMEAR_RATE : "0.00 ms/s";
+
+  if (st.next) {
+    const start = new Date(st.next.at.getTime() - SMEAR);
+    $("next-event").textContent = st.active
+      ? "in progress"
+      : start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  const pct = st.frac * 100;
+  $("smear-pct").textContent = pct.toFixed(1) + "%";
+  $("smear-fill").style.width = pct + "%";
+
+  if (st.active) {
+    $("clock-status").innerHTML =
+      "<b>SMEAR IN PROGRESS.</b> The " + st.next.label + " hour is " + pct.toFixed(1) +
+      "% administered, at " + SMEAR_RATE + ". Unsmeared clocks currently disagree with this " +
+      "display by " + Math.round(Math.abs(dv) / 60000) + " minutes. They will come around.";
+  } else if (st.next) {
+    const start = new Date(st.next.at.getTime() - SMEAR);
+    const days = Math.ceil((start - now) / DAY);
+    $("clock-status").innerHTML =
+      "<b>TIMEBASE STABLE.</b> Currently in full agreement with legacy civil time. " +
+      "The next smear begins " + fmtDate(start) + " — " + days +
+      " days from now — and will complete without incident.";
+  }
+}
+tick();
+setInterval(tick, 100);
+</script>
+</body>
+</html>
