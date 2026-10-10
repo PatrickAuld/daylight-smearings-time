@@ -5,8 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 A parody campaign site for "Daylight Smearings Time" — a fictional civic proposal (from the
-"Institute for Temporal Continuity") to spread the annual one-hour daylight-saving change
-across 14 days instead of applying it instantly. The humor depends entirely on a **deadpan,
+"Institute for Temporal Continuity") to anchor civil time to the sun: sunrise is always
+06:00 and sunset always 18:00, with daylight and night each divided into twelve equal hours
+that stretch or compress with the seasons (Bulletin No. 15, which superseded the earlier
+fourteen-day DST smear of Bulletin No. 14). The humor depends entirely on a **deadpan,
 serious tone**: the site never winks at the reader or admits it's a joke. Preserve this when
 editing copy. The premise is internally consistent and leans on real precedent (leap smearing)
 and real citations (DST heart-attack / traffic studies) — keep claims plausible and the voice
@@ -27,25 +29,30 @@ browser. `astro build` does not type-check by default; run `npx astro check` if 
 
 Astro 5 static site. Two routed pages, with shared logic and design tokens factored out.
 
-- **`src/scripts/smear.js`** is the conceptual core and the only place the smear model lives.
+- **`src/scripts/smear.js`** is the conceptual core and the only place the time model lives.
   It's a plain ES module (exports functions + constants). Both pages import from it; Astro
-  bundles it into one shared client chunk. The model: the one-hour change is applied **linearly
-  over the 14 days ending at the legacy US transition instant** (2nd Sunday of March / 1st
-  Sunday of November, 02:00 local). Smeared and civil time therefore re-converge exactly at the
-  moment unsmeared clocks jump. `smearState(now)` returns `{ active, frac, divergenceMs, next }`;
-  `smearedNow()` wraps it with the current `Date`. If you touch timekeeping, this file is the
-  single source of truth — the pages only render its output.
+  bundles it into one shared client chunk. The model: sunrise/sunset come from the standard
+  sunrise equation (−0.833° altitude). Sunrise → sunset maps linearly onto 06:00–18:00;
+  sunset → next sunrise maps onto 18:00–06:00, so midnight is the midpoint of darkness. Polar
+  days/nights are clamped (min ~65 min segment). `smearState(now, loc)` returns
+  `{ phase, frac, hourMs, rate, msOfDay, date, divergenceMs, next }`; `smearedNow(loc)` wraps
+  it with the current time and h/m/s fields. The smeared `date` is a UTC-midnight Date — format
+  it with `timeZone: "UTC"` (`fmtSmearedDate`). Location: `getLocation()` returns a saved device
+  location (localStorage) or a reference city derived from the browser time zone;
+  `requestDeviceLocation()` / `clearLocation()` switch between them. If you touch timekeeping,
+  this file is the single source of truth — the pages only render its output.
 
 - **`src/pages/index.astro`** — the campaign page (route `/`). Its inline module `<script>`
-  drives three live things by element id: the masthead clock, and (via `renderNextShift()`) the
-  §02 prose dates **and** the SVG comparison chart, which is rewritten to match the *direction*
-  of the next transition (spring ramps up, fall ramps down). The pledge form posts to a Google
-  Form — wiring constants (`GOOGLE_FORM_ACTION`, `GOOGLE_FORM_EMAIL_FIELD`) are at the top of
-  that script and are currently placeholders; until set, the form just shows the local success
-  state.
+  drives the masthead clock, the §02 "today" line (hour lengths at the reference location), and
+  the §02 SVG chart, which is generated client-side: a year of legacy sunrise/sunset times
+  (dashed, wandering, with DST jumps) against the flat 6 am / 6 pm smeared lines. The pledge
+  form posts to a Google Form — wiring constants (`GOOGLE_FORM_ACTION`,
+  `GOOGLE_FORM_EMAIL_FIELD`) are at the top of that script and are currently placeholders;
+  until set, the form just shows the local success state.
 
 - **`src/pages/clock.astro`** — the full-screen live clock (route `/clock`). Same `smear.js`
-  engine, different presentation (instrument panel, divergence/rate/progress readouts).
+  engine, different presentation (divergence / clock rate / hour length readouts, day-or-night
+  progress bar, "Use my location" toggle).
 
 - **`src/layouts/Base.astro`** — owns `<html>`/`<head>`, font loading, and the `<body class>`.
   Pages pass `title`, `description`, and a `bodyClass`.
