@@ -4,7 +4,7 @@ import ClockMark from '../components/ClockMark.astro';
 
 const title = 'Official Smeared Time — Daylight Smearings Time';
 const description =
-  'The official live display of smeared civil time, maintained by the Institute for Temporal Continuity.';
+  'The official live display of smeared civil time: sunrise at 6:00, sunset at 18:00, every day. Maintained by the Institute for Temporal Continuity.';
 ---
 <Base title={title} description={description} bodyClass="page-clock">
 
@@ -22,7 +22,11 @@ const description =
     <span id="hh">--</span><span class="colon">:</span><span id="mm">--</span><span class="colon">:</span><span id="ss">--</span><span class="tenths" id="ds">.0</span>
   </div>
   <p class="date" id="clock-date">—</p>
-  <p class="status" id="clock-status">Initializing continuous timebase…</p>
+  <p class="status" id="clock-status">Consulting the sun…</p>
+  <p class="where">
+    <span id="loc-label">—</span>
+    <button type="button" id="loc-btn">Use my location</button>
+  </p>
 </main>
 
 <div class="panel">
@@ -30,17 +34,18 @@ const description =
     <dl class="readouts">
       <div class="cell"><dt>Legacy civil time</dt><dd id="civil">--:--:--</dd></div>
       <div class="cell"><dt>Divergence</dt><dd id="divergence"><em>+00:00.0</em></dd></div>
-      <div class="cell"><dt>Smear rate</dt><dd id="rate">0.00 ms/s</dd></div>
-      <div class="cell"><dt>Next smear event</dt><dd id="next-event">—</dd></div>
+      <div class="cell"><dt>Clock rate</dt><dd id="rate">—</dd></div>
+      <div class="cell"><dt>Length of this hour</dt><dd id="hour-len">—</dd></div>
     </dl>
     <div class="track">
-      <div class="lab"><span>Smear progress</span><span id="smear-pct">0.0%</span></div>
-      <div class="bar"><i id="smear-fill"></i></div>
+      <div class="lab"><span id="track-label">Daylight administered</span><span id="track-pct">0.0%</span></div>
+      <div class="bar"><i id="track-fill"></i></div>
+      <div class="ends"><span id="track-a">Sunrise · 06:00</span><span id="track-b">Sunset · 18:00</span></div>
     </div>
   </div>
 </div>
 
-<p class="foot">This display is authoritative in both timebases · Bulletin No. 14</p>
+<p class="foot">This display is authoritative at every latitude below the polar circles · Bulletin No. 15</p>
 
 </Base>
 
@@ -174,6 +179,24 @@ dl.readouts{
   border-radius:3px;transition:width .5s;
 }
 
+.where{
+  margin-top:1.6vh;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;
+  font-family:var(--mono);font-size:clamp(10px,1.1vw,11.5px);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dimmer);
+}
+.where button{
+  font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;
+  color:var(--gold);background:none;border:1px solid rgba(201,154,63,.4);border-radius:2px;
+  padding:5px 10px;transition:border-color .2s,color .2s;
+}
+.where button:hover{border-color:var(--dawn-bright);color:var(--dawn-bright)}
+.where button:disabled{opacity:.5;cursor:default}
+.bar.night i{background:linear-gradient(90deg,#3E5A7A,#8FA6C2)}
+.track .ends{
+  display:flex;justify-content:space-between;margin-top:8px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dimmer);
+}
+
 .foot{
   text-align:center;padding:0 34px 22px;
   font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
@@ -183,57 +206,74 @@ dl.readouts{
 </style>
 
 <script>
-import { smearedNow, pad, fmtDate, SMEAR, SMEAR_RATE, DAY } from '../scripts/smear.js';
+import {
+  smearedNow, getLocation, requestDeviceLocation, clearLocation,
+  pad, fmtHMS, fmtSmearedDate, fmtLegacyTime, fmtDur, fmtCoords, HOUR,
+} from '../scripts/smear.js';
 
 const $ = (id) => document.getElementById(id);
+let loc = getLocation();
+
+function renderLocation() {
+  $("loc-label").textContent =
+    (loc.source === "device" ? "Your location" : "Reference: " + loc.name) + " · " + fmtCoords(loc);
+  $("loc-btn").textContent = loc.source === "device" ? "Use reference location" : "Use my location";
+}
+
+$("loc-btn").addEventListener("click", async () => {
+  if (loc.source === "device") { loc = clearLocation(); renderLocation(); tick(); return; }
+  const btn = $("loc-btn");
+  btn.disabled = true; btn.textContent = "Locating the sun…";
+  try { loc = await requestDeviceLocation(); }
+  catch { btn.textContent = "Location unavailable"; setTimeout(renderLocation, 2500); btn.disabled = false; return; }
+  btn.disabled = false; renderLocation(); tick();
+});
+
+function fmtDivergence(dv) {
+  const sign = dv < 0 ? "−" : "+";
+  const a = Math.abs(dv);
+  if (a >= HOUR) {
+    return sign + Math.floor(a / HOUR) + ":" + pad(Math.floor((a % HOUR) / 60000)) + ":" + pad(Math.floor((a % 60000) / 1000));
+  }
+  return sign + pad(Math.floor(a / 60000)) + ":" + pad(Math.floor((a % 60000) / 1000)) + "." + Math.floor((a % 1000) / 100);
+}
 
 function tick() {
-  const { now, st, smeared } = smearedNow();
+  const { now, st, h, m, s, ms } = smearedNow(loc);
 
-  $("hh").textContent = pad(smeared.getHours());
-  $("mm").textContent = pad(smeared.getMinutes());
-  $("ss").textContent = pad(smeared.getSeconds());
-  $("ds").textContent = "." + Math.floor(smeared.getMilliseconds() / 100);
-  $("clock-date").textContent = fmtDate(smeared);
+  $("hh").textContent = pad(h);
+  $("mm").textContent = pad(m);
+  $("ss").textContent = pad(s);
+  $("ds").textContent = "." + Math.floor(ms / 100);
+  $("clock-date").textContent = fmtSmearedDate(st.date);
 
-  $("civil").textContent =
-    pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  $("civil").textContent = fmtHMS(now.getHours(), now.getMinutes(), now.getSeconds());
+  $("divergence").innerHTML = "<em>" + fmtDivergence(st.divergenceMs) + "</em>";
+  $("rate").textContent = st.rate.toFixed(4) + " s/s";
+  $("hour-len").textContent = fmtDur(st.hourMs);
 
-  const dv = st.divergenceMs;
-  const sign = dv > 0 ? "+" : dv < 0 ? "−" : "+";
-  const adv = Math.abs(dv);
-  $("divergence").innerHTML = "<em>" + sign +
-    pad(Math.floor(adv / 60000)) + ":" +
-    pad(Math.floor((adv % 60000) / 1000)) + "." +
-    Math.floor((adv % 1000) / 100) + "</em>";
-
-  $("rate").textContent = st.active ? SMEAR_RATE : "0.00 ms/s";
-
-  if (st.next) {
-    const start = new Date(st.next.at.getTime() - SMEAR);
-    $("next-event").textContent = st.active
-      ? "in progress"
-      : start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  }
-
+  const day = st.phase === "day";
   const pct = st.frac * 100;
-  $("smear-pct").textContent = pct.toFixed(1) + "%";
-  $("smear-fill").style.width = pct + "%";
+  $("track-label").textContent = day ? "Daylight administered" : "Night administered";
+  $("track-pct").textContent = pct.toFixed(1) + "%";
+  $("track-fill").style.width = pct + "%";
+  $("track-fill").parentElement.classList.toggle("night", !day);
+  $("track-a").textContent = day ? "Sunrise · 06:00" : "Sunset · 18:00";
+  $("track-b").textContent = day ? "Sunset · 18:00" : "Sunrise · 06:00";
 
-  if (st.active) {
-    $("clock-status").innerHTML =
-      "<b>SMEAR IN PROGRESS.</b> The " + st.next.label + " hour is " + pct.toFixed(1) +
-      "% administered, at " + SMEAR_RATE + ". Unsmeared clocks currently disagree with this " +
-      "display by " + Math.round(Math.abs(dv) / 60000) + " minutes. They will come around.";
-  } else if (st.next) {
-    const start = new Date(st.next.at.getTime() - SMEAR);
-    const days = Math.ceil((start - now) / DAY);
-    $("clock-status").innerHTML =
-      "<b>TIMEBASE STABLE.</b> Currently in full agreement with legacy civil time. " +
-      "The next smear begins " + fmtDate(start) + " — " + days +
-      " days from now — and will complete without incident.";
-  }
+  const pace = st.rate > 1 ? "faster" : "slower";
+  const lenWord = st.hourMs > HOUR ? "long" : "short";
+  const evt = st.next.kind;
+  const evtSmeared = day ? "6:00 p.m." : "6:00 a.m.";
+  $("clock-status").innerHTML =
+    "<b>" + (day ? "DAYLIGHT." : "NIGHT.") + "</b> Today's " + (day ? "daylight" : "night") +
+    " hours are " + lenWord + ": " + fmtDur(st.hourMs) + " each. This clock is running " +
+    Math.abs((st.rate - 1) * 100).toFixed(1) + "% " + pace + " than legacy clocks. " +
+    "The sun will " + (evt === "sunset" ? "set" : "rise") + " at " + evtSmeared +
+    " (" + fmtLegacyTime(st.next.at) + " on legacy clocks).";
 }
+
+renderLocation();
 tick();
 setInterval(tick, 100);
 </script>
